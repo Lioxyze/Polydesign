@@ -8,7 +8,7 @@ flowchart LR
     Browser["Browser<br/>Next.js web app"] -- "REST + JWT" --> API["NestJS API"]
     API -- "Prisma" --> DB[("MySQL")]
     API -- "presigned URL" --> Browser
-    Browser -- "direct upload / download" --> S3[("S3 storage<br/>(MinIO locally)")]
+    Browser -- "direct upload / download" --> S3[("S3 storage<br/>(S3Mock locally)")]
     API -- "SMTP" --> Mail["Mail server<br/>(Mailpit locally)"]
 ```
 

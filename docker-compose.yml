@@ -20,6 +20,7 @@ services:
       - '${MYSQL_PORT:-3306}:3306'
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test:
         ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-p${MYSQL_ROOT_PASSWORD:-root}']
@@ -27,37 +28,20 @@ services:
       timeout: 5s
       retries: 20
 
-  # S3-compatible object storage for 3D files and images (local replacement for AWS S3)
-  minio:
-    image: minio/minio:latest
-    container_name: polydesign-minio
+  # S3-compatible object storage for 3D files and images (local replacement for AWS S3).
+  # The bucket is created at startup; any access key / secret key is accepted.
+  s3:
+    image: adobe/s3mock:latest
+    container_name: polydesign-s3
     restart: unless-stopped
-    command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-polydesign}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-polydesign-secret}
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: ${S3_BUCKET:-polydesign}
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: 'true'
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /data
     ports:
-      - '9000:9000' # S3 API
-      - '9001:9001' # Web console
+      - '9000:9090' # S3 API (http)
     volumes:
-      - minio-data:/data
-
-  # Creates the bucket and sets the CORS-friendly policy once MinIO is up
-  minio-init:
-    image: minio/mc:latest
-    container_name: polydesign-minio-init
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-polydesign} $${MINIO_ROOT_PASSWORD:-polydesign-secret}; do sleep 2; done;
-      mc mb --ignore-existing local/$${S3_BUCKET:-polydesign};
-      exit 0;
-      "
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-polydesign}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-polydesign-secret}
-      S3_BUCKET: ${S3_BUCKET:-polydesign}
+      - s3-data:/data
 
   # Catches every e-mail sent by the API (account confirmation, password reset...)
   mailpit:
@@ -70,4 +54,4 @@ services:
 
 volumes:
   mysql-data:
-  minio-data:
+  s3-data:

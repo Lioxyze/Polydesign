@@ -14,7 +14,7 @@ preview and download them, and interact through likes, favorites and comments.
 | Web app      | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, TanStack Query |
 | API          | NestJS 11, TypeScript, Zod (validation), JWT (authentication)                 |
 | Database     | MySQL 8, Prisma 7 (ORM + migrations)                                          |
-| File storage | S3-compatible object storage (MinIO in development), presigned upload URLs    |
+| File storage | S3-compatible object storage (S3Mock in development), presigned upload URLs   |
 | Tooling      | npm workspaces, Docker Compose, Jest, ESLint, Prettier, GitHub Actions        |
 
 ## Repository structure
@@ -25,7 +25,7 @@ polydesign/
 │   ├── api/          # NestJS REST API (+ Prisma schema, migrations, seed)
 │   └── web/          # Next.js web app
 ├── docs/             # Architecture, data model, API routes
-├── docker-compose.yml  # Local services: MySQL, MinIO, Mailpit
+├── docker-compose.yml  # Local services: MySQL, S3 storage, Mailpit
 └── package.json      # npm workspaces + root scripts
 ```
 
@@ -34,7 +34,7 @@ polydesign/
 ### Prerequisites
 
 - [Node.js 24 LTS](https://nodejs.org/) (see `.nvmrc`)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for MySQL, MinIO and Mailpit)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for MySQL, the S3 storage and Mailpit)
 
 ### 1. Install dependencies
 
@@ -75,14 +75,14 @@ The home page shows whether the web app can reach the API and the database.
 
 ### Local URLs
 
-| Service            | URL                              | Credentials                        |
-| ------------------ | -------------------------------- | ---------------------------------- |
-| Web app            | http://localhost:3000            |                                    |
-| API                | http://localhost:4000/api        |                                    |
-| API health check   | http://localhost:4000/api/health |                                    |
-| MinIO console (S3) | http://localhost:9001            | `polydesign` / `polydesign-secret` |
-| Mailpit (e-mails)  | http://localhost:8025            |                                    |
-| MySQL              | `localhost:3306`                 | `polydesign` / `polydesign`        |
+| Service           | URL                              | Credentials                 |
+| ----------------- | -------------------------------- | --------------------------- |
+| Web app           | http://localhost:3000            |                             |
+| API               | http://localhost:4000/api        |                             |
+| API health check  | http://localhost:4000/api/health |                             |
+| S3 storage (API)  | http://localhost:9000            | any key / secret            |
+| Mailpit (e-mails) | http://localhost:8025            |                             |
+| MySQL             | `localhost:3306`                 | `polydesign` / `polydesign` |
 
 ## Scripts
 
@@ -96,7 +96,7 @@ Run from the repository root:
 | `npm run lint`          | ESLint + TypeScript type check everywhere |
 | `npm test`              | Run the unit tests                        |
 | `npm run format`        | Format the code with Prettier             |
-| `npm run services:up`   | Start MySQL, MinIO and Mailpit            |
+| `npm run services:up`   | Start MySQL, S3 storage, Mailpit          |
 | `npm run services:down` | Stop the local services                   |
 
 Database scripts (`-w @polydesign/api`): `db:migrate`, `db:seed`, `db:reset`, `db:studio`, `db:generate`.
