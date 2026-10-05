@@ -19,15 +19,13 @@ preview and download them, and interact through likes, favorites and comments.
 
 ## Repository structure
 
-```
-polydesign/
-├── apps/
-│   ├── api/          # NestJS REST API (+ Prisma schema, migrations, seed)
-│   └── web/          # Next.js web app
-├── docs/             # Architecture, data model, API routes
-├── docker-compose.yml  # Local services: MySQL, S3 storage, Mailpit
-└── package.json      # npm workspaces + root scripts
-```
+| Path                 | Content                                          |
+| -------------------- | ------------------------------------------------ |
+| `apps/api`           | NestJS REST API, Prisma schema, migrations, seed |
+| `apps/web`           | Next.js web app                                  |
+| `docs`               | Architecture, data model, API routes             |
+| `docker`             | Configuration of the local services              |
+| `docker-compose.yml` | Local services: MySQL, S3 storage, Mailpit       |
 
 ## Getting started
 
@@ -49,7 +47,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-The default values match the Docker Compose services — nothing to change for local development.
+The default values match the Docker Compose services, nothing to change for local development.
 
 ### 3. Start the local services
 

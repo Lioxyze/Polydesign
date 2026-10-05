@@ -1,4 +1,3 @@
-// ESLint flat config shared by the whole monorepo
 import path from 'node:path';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
@@ -21,7 +20,6 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // API (NestJS, Node)
   {
     files: ['apps/api/**/*.ts'],
     languageOptions: { globals: { ...globals.node, ...globals.jest } },
@@ -33,7 +31,6 @@ export default tseslint.config(
     },
   },
 
-  // Web (Next.js, React)
   {
     files: ['apps/web/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
@@ -46,7 +43,6 @@ export default tseslint.config(
     },
   },
 
-  // Config files (CommonJS / Node)
   {
     files: ['**/*.{js,mjs,cjs}'],
     languageOptions: { globals: { ...globals.node } },

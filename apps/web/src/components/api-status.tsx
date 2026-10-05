@@ -3,11 +3,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHealth } from '@/lib/api';
 
-/** Shows whether the web app can reach the API and the database. */
 export function ApiStatus() {
   const { data, isPending, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth });
 
-  let label = 'Vérification de l’API…';
+  let label = "Vérification de l'API...";
   let color = 'bg-muted';
 
   if (isError) {

@@ -4,10 +4,6 @@ import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../generated/prisma/client';
 import type { Env } from '../config/env.schema';
 
-/**
- * Single Prisma client shared by the whole API.
- * Prisma 7 talks to MySQL through the MariaDB driver adapter.
- */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor(config: ConfigService<Env, true>) {
@@ -22,7 +18,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
   }
 
-  /** Returns true when the database answers a trivial query. */
   async isHealthy(): Promise<boolean> {
     try {
       await this.$queryRaw`SELECT 1`;

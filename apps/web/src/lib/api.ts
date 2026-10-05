@@ -10,7 +10,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Small typed wrapper around fetch for calls to the PolyDesign API. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,

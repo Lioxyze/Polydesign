@@ -2,10 +2,10 @@
 
 ## Branches
 
-- `main` — always stable, deployable
+- `main`: always stable, deployable
 - one branch per feature or fix, created from `main`:
-  - `feature/<short-name>` — e.g. `feature/auth-jwt`
-  - `fix/<short-name>` — e.g. `fix/favorite-duplicate`
+  - `feature/<short-name>`, e.g. `feature/auth-jwt`
+  - `fix/<short-name>`, e.g. `fix/favorite-duplicate`
   - `chore/<short-name>`, `docs/<short-name>`
 
 Branches are merged into `main` through a pull request once the CI is green.

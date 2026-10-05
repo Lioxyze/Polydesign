@@ -1,4 +1,3 @@
-/** @type {import('jest').Config} */
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
@@ -7,6 +6,5 @@ module.exports = {
   collectCoverageFrom: ['**/*.ts', '!main.ts', '!**/*.module.ts', '!generated/**'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
-  // The generated Prisma client uses ESM-style ".js" import paths
   moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
 };

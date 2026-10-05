@@ -1,6 +1,3 @@
-# Local development services.
-# The API and the web app run on the host (npm run dev); only the
-# infrastructure they depend on runs in containers.
 name: polydesign
 
 services:
@@ -28,8 +25,6 @@ services:
       timeout: 5s
       retries: 20
 
-  # S3-compatible object storage for 3D files and images (local replacement for AWS S3).
-  # The bucket is created at startup; any access key / secret key is accepted.
   s3:
     image: adobe/s3mock:latest
     container_name: polydesign-s3
@@ -39,18 +34,17 @@ services:
       COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: 'true'
       COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /data
     ports:
-      - '9000:9090' # S3 API (http)
+      - '9000:9090'
     volumes:
       - s3-data:/data
 
-  # Catches every e-mail sent by the API (account confirmation, password reset...)
   mailpit:
     image: axllent/mailpit:latest
     container_name: polydesign-mailpit
     restart: unless-stopped
     ports:
-      - '1025:1025' # SMTP
-      - '8025:8025' # Web UI
+      - '1025:1025'
+      - '8025:8025'
 
 volumes:
   mysql-data:

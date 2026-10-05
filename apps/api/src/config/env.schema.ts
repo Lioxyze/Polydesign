@@ -1,10 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Every environment variable the API needs, validated once at startup.
- * The app refuses to start if a variable is missing or malformed,
- * instead of failing later at runtime.
- */
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),

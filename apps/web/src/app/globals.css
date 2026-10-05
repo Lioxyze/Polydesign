@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* PolyDesign design tokens (from the graphic charter) */
 @theme {
   --color-ink: #0b1120;
   --color-surface: #161c30;
@@ -11,7 +10,6 @@
   --color-success: #34d399;
   --color-danger: #f87171;
 
-  /* System fonts: no web font to download (eco-design, RGESN) */
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 

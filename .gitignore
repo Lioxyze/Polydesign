@@ -1,7 +1,5 @@
-# Dependencies
 node_modules/
 
-# Builds
 dist/
 .next/
 out/
@@ -9,21 +7,17 @@ build/
 coverage/
 *.tsbuildinfo
 
-# Environment
 .env
 .env.*
 !.env.example
 
-# Logs
 *.log
 npm-debug.log*
 
-# OS / editors
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
 
-# Next.js generated types
 next-env.d.ts

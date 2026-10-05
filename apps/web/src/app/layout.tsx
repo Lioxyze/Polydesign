@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: { default: 'PolyDesign', template: '%s · PolyDesign' },
-  description: 'Publiez, partagez et téléchargez des modèles 3D — la plateforme francophone.',
+  description: 'Publiez, partagez et téléchargez des modèles 3D sur la plateforme francophone.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
