@@ -1,0 +1,26 @@
+{
+  "name": "polydesign",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PolyDesign — a French-speaking platform to publish, share and download 3D models.",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev -w @polydesign/api",
+    "dev:web": "npm run dev -w @polydesign/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down"
+  }
+}
