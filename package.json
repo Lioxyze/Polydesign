@@ -2,7 +2,7 @@
   "name": "polydesign",
   "version": "0.1.0",
   "private": true,
-  "description": "PolyDesign — a French-speaking platform to publish, share and download 3D models.",
+  "description": "PolyDesign \u2014 a French-speaking platform to publish, share and download 3D models.",
   "license": "UNLICENSED",
   "workspaces": [
     "apps/*",
@@ -33,5 +33,10 @@
     "prettier": "3.9.9",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.0"
+  },
+  "overrides": {
+    "mariadb": "3.5.4",
+    "mysql2": "3.24.5",
+    "deepmerge-ts": "8.0.2"
   }
 }
