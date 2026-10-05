@@ -1,0 +1,72 @@
+# Local development services.
+# The API and the web app run on the host (npm run dev); only the
+# infrastructure they depend on runs in containers.
+name: polydesign
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: polydesign-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-polydesign}
+      MYSQL_USER: ${MYSQL_USER:-polydesign}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-polydesign}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # S3-compatible object storage for 3D files and images (local replacement for AWS S3)
+  minio:
+    image: minio/minio:latest
+    container_name: polydesign-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-polydesign}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-polydesign-secret}
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    volumes:
+      - minio-data:/data
+
+  # Creates the bucket and sets the CORS-friendly policy once MinIO is up
+  minio-init:
+    image: minio/mc:latest
+    container_name: polydesign-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-polydesign} $${MINIO_ROOT_PASSWORD:-polydesign-secret}; do sleep 2; done;
+      mc mb --ignore-existing local/$${S3_BUCKET:-polydesign};
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-polydesign}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-polydesign-secret}
+      S3_BUCKET: ${S3_BUCKET:-polydesign}
+
+  # Catches every e-mail sent by the API (account confirmation, password reset...)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: polydesign-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
+volumes:
+  mysql-data:
+  minio-data:
