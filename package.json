@@ -22,5 +22,9 @@
     "format:check": "prettier --check .",
     "services:up": "docker compose up -d",
     "services:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prettier": "3.9.9",
+    "typescript": "6.0.3"
   }
 }
