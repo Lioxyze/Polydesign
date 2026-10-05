@@ -4,3 +4,5 @@ dist
 coverage
 package-lock.json
 **/prisma/migrations
+**/src/generated
+next-env.d.ts
