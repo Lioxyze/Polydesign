@@ -1,3 +1,5 @@
+import { ApiStatus } from '@/components/api-status';
+
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-start justify-center gap-6 px-6">
@@ -11,6 +13,7 @@ export default function HomePage() {
       <p className="text-lg text-muted">
         La plateforme francophone pour publier, partager et télécharger des modèles 3D.
       </p>
+      <ApiStatus />
     </main>
   );
 }
