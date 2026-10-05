@@ -1,7 +1,3 @@
-// PolyDesign data model — translation of the MCD (11 tables).
-// Models and fields are named in English in the code; @@map / @map keep
-// the table and column names of the database script from the design file.
-
 generator client {
   provider     = "prisma-client"
   output       = "../src/generated/prisma"
@@ -13,180 +9,468 @@ datasource db {
 }
 
 enum ModelStatus {
-  DRAFT     @map("brouillon")
-  IN_REVIEW @map("en_revision")
-  PUBLISHED @map("publie")
-  REMOVED   @map("retire")
+  DRAFT     @map("draft")
+  PUBLISHED @map("published")
+  REMOVED   @map("removed")
+}
+
+enum Visibility {
+  PUBLIC   @map("public")
+  UNLISTED @map("unlisted")
+  PRIVATE  @map("private")
+}
+
+enum ModelType {
+  CGI      @map("cgi")
+  PRINT_3D @map("print_3d")
+}
+
+enum Geometry {
+  POLYGON_MESH @map("polygon_mesh")
+  SUBDIVISION  @map("subdivision")
+  NURBS        @map("nurbs")
+  MIXED        @map("mixed")
+}
+
+enum UvUnwrapping {
+  YES         @map("yes")
+  NO          @map("no")
+  OVERLAPPING @map("overlapping")
+  MIXED       @map("mixed")
+}
+
+enum FileFormat {
+  GLB   @map("glb")
+  GLTF  @map("gltf")
+  FBX   @map("fbx")
+  OBJ   @map("obj")
+  STL   @map("stl")
+  BLEND @map("blend")
+  USDZ  @map("usdz")
+}
+
+enum UploadStatus {
+  PENDING  @map("pending")
+  UPLOADED @map("uploaded")
+  REJECTED @map("rejected")
+}
+
+enum SubscriptionStatus {
+  ACTIVE   @map("active")
+  CANCELED @map("canceled")
+  EXPIRED  @map("expired")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION @map("email_verification")
+  PASSWORD_RESET     @map("password_reset")
+}
+
+enum LinkPlatform {
+  WEBSITE    @map("website")
+  ARTSTATION @map("artstation")
+  SKETCHFAB  @map("sketchfab")
+  INSTAGRAM  @map("instagram")
+  YOUTUBE    @map("youtube")
+  X          @map("x")
+}
+
+enum ReportStatus {
+  PENDING  @map("pending")
+  RESOLVED @map("resolved")
+  REJECTED @map("rejected")
 }
 
 model Role {
   id          Int     @id @default(autoincrement()) @db.UnsignedInt
-  name        String  @unique @map("nom") @db.VarChar(50)
+  name        String  @unique @db.VarChar(50)
   description String? @db.VarChar(255)
 
   users User[]
 
-  @@map("role")
-}
-
-model Category {
-  id   Int    @id @default(autoincrement()) @db.UnsignedInt
-  name String @unique @map("nom") @db.VarChar(80)
-
-  models Model3D[]
-
-  @@map("categorie")
-}
-
-model License {
-  id   Int    @id @default(autoincrement()) @db.UnsignedInt
-  type String @db.VarChar(50)
-  name String @map("nom") @db.VarChar(120)
-
-  models Model3D[]
-
-  @@map("licence")
+  @@map("roles")
 }
 
 model User {
-  id             Int       @id @default(autoincrement()) @db.UnsignedInt
-  email          String    @unique @db.VarChar(180)
-  /// Argon2 hash — never the plain password
-  password       String    @db.VarChar(255)
-  username       String    @unique @db.VarChar(50)
-  firstName      String?   @map("first_name") @db.VarChar(100)
-  lastName       String?   @map("last_name") @db.VarChar(100)
-  bio            String?   @db.Text
-  avatarUrl      String?   @map("avatar_url") @db.VarChar(500)
-  isCreator      Boolean   @default(false) @map("is_creator")
-  isPremium      Boolean   @default(false) @map("is_premium")
-  premiumUntil   DateTime? @map("premium_until") @db.DateTime(0)
-  /// GDPR: date of explicit consent
-  gdprAcceptedAt DateTime? @map("gdpr_accepted_at") @db.DateTime(0)
-  active         Boolean   @default(true)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  roleId         Int       @map("role_id") @db.UnsignedInt
+  id                  Int       @id @default(autoincrement()) @db.UnsignedInt
+  email               String    @unique @db.VarChar(180)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  username            String    @unique @db.VarChar(50)
+  firstName           String?   @map("first_name") @db.VarChar(100)
+  lastName            String?   @map("last_name") @db.VarChar(100)
+  bio                 String?   @db.Text
+  avatarKey           String?   @map("avatar_key") @db.VarChar(500)
+  gdprAcceptedAt      DateTime? @map("gdpr_accepted_at")
+  emailVerifiedAt     DateTime? @map("email_verified_at")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts") @db.UnsignedSmallInt
+  lockedUntil         DateTime? @map("locked_until")
+  isActive            Boolean   @default(true) @map("is_active")
+  deletedAt           DateTime? @map("deleted_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  roleId              Int       @map("role_id") @db.UnsignedInt
 
-  role      Role       @relation(fields: [roleId], references: [id], onDelete: Restrict, map: "fk_utilisateur_role")
-  models    Model3D[]
-  comments  Comment[]
-  reports   Report[]
-  likes     Like[]
-  favorites Favorite[]
+  role            Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  subscriptions   Subscription[]
+  tokens          UserToken[]
+  refreshTokens   RefreshToken[]
+  links           UserLink[]
+  following       Follow[]       @relation("follower")
+  followers       Follow[]       @relation("followedCreator")
+  models          Model3D[]
+  downloads       Download[]
+  comments        Comment[]
+  ratings         Rating[]
+  likes           Like[]
+  favorites       Favorite[]
+  collections     Collection[]
+  reports         Report[]       @relation("reportAuthor")
+  resolvedReports Report[]       @relation("reportResolver")
 
-  @@map("utilisateur")
+  @@map("users")
+}
+
+model Subscription {
+  id               Int                @id @default(autoincrement()) @db.UnsignedInt
+  plan             String             @default("premium_monthly") @db.VarChar(30)
+  status           SubscriptionStatus @default(ACTIVE)
+  startsAt         DateTime           @default(now()) @map("starts_at")
+  endsAt           DateTime           @map("ends_at")
+  paymentReference String?            @map("payment_reference") @db.VarChar(255)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  userId           Int                @map("user_id") @db.UnsignedInt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsAt])
+  @@map("subscriptions")
+}
+
+model UserToken {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  type      TokenType
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  userId    Int       @map("user_id") @db.UnsignedInt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("user_tokens")
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  userId    Int       @map("user_id") @db.UnsignedInt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model UserLink {
+  id       Int          @id @default(autoincrement()) @db.UnsignedInt
+  platform LinkPlatform
+  url      String       @db.VarChar(500)
+  userId   Int          @map("user_id") @db.UnsignedInt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@map("user_links")
+}
+
+model Follow {
+  followerId Int      @map("follower_id") @db.UnsignedInt
+  creatorId  Int      @map("creator_id") @db.UnsignedInt
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  follower User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  creator  User @relation("followedCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, creatorId])
+  @@index([creatorId])
+  @@map("follows")
+}
+
+model Category {
+  id       Int    @id @default(autoincrement()) @db.UnsignedInt
+  name     String @db.VarChar(80)
+  slug     String @unique @db.VarChar(100)
+  parentId Int?   @map("parent_id") @db.UnsignedInt
+
+  parent        Category?  @relation("subcategories", fields: [parentId], references: [id], onDelete: Restrict)
+  subcategories Category[] @relation("subcategories")
+  models        Model3D[]
+
+  @@unique([parentId, name])
+  @@map("categories")
+}
+
+model License {
+  id                   Int     @id @default(autoincrement()) @db.UnsignedInt
+  name                 String  @unique @db.VarChar(120)
+  commercialUse        Boolean @default(false) @map("commercial_use")
+  modificationsAllowed Boolean @default(false) @map("modifications_allowed")
+
+  models Model3D[]
+
+  @@map("licenses")
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement()) @db.UnsignedInt
+  name String @unique @db.VarChar(50)
+
+  models ModelTag[]
+
+  @@map("tags")
 }
 
 model Model3D {
-  id                   Int         @id @default(autoincrement()) @db.UnsignedInt
-  title                String      @map("titre") @db.VarChar(150)
-  description          String?     @db.Text
-  fileUrl              String      @map("fichier_url") @db.VarChar(500)
-  thumbnailUrl         String?     @map("thumbnail_url") @db.VarChar(500)
-  downloads            Int         @default(0) @db.UnsignedInt
-  views                Int         @default(0) @map("vues") @db.UnsignedInt
-  price                Decimal     @default(0.00) @map("prix") @db.Decimal(8, 2)
-  isPremium            Boolean     @default(false) @map("est_premium")
-  polycount            Int?        @db.UnsignedInt
-  software             String?     @map("logiciel") @db.VarChar(100)
-  isRigged             Boolean     @default(false) @map("est_rigge")
-  isAnimated           Boolean     @default(false) @map("est_anime")
-  commercialUse        Boolean     @default(false) @map("usage_commercial")
-  modificationsAllowed Boolean     @default(false) @map("modifications_autorisees")
-  status               ModelStatus @default(DRAFT) @map("statut")
-  version              String?     @db.VarChar(20)
-  publishedAt          DateTime?   @map("publie_le") @db.DateTime(0)
-  createdAt            DateTime    @default(now()) @map("created_at") @db.DateTime(0)
-  userId               Int         @map("utilisateur_id") @db.UnsignedInt
-  categoryId           Int         @map("categorie_id") @db.UnsignedInt
-  licenseId            Int         @map("licence_id") @db.UnsignedInt
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  title           String        @db.VarChar(150)
+  slug            String        @unique @db.VarChar(180)
+  description     String?       @db.Text
+  status          ModelStatus   @default(DRAFT)
+  visibility      Visibility    @default(PUBLIC)
+  modelType       ModelType     @default(CGI) @map("model_type")
+  isPremium       Boolean       @default(false) @map("is_premium")
+  isDownloadable  Boolean       @default(true) @map("is_downloadable")
+  allowComments   Boolean       @default(true) @map("allow_comments")
+  isAiGenerated   Boolean       @default(false) @map("is_ai_generated")
+  isAgeRestricted Boolean       @default(false) @map("is_age_restricted")
+  hasTextures     Boolean       @default(false) @map("has_textures")
+  hasMaterials    Boolean       @default(false) @map("has_materials")
+  isPbr           Boolean       @default(false) @map("is_pbr")
+  isRigged        Boolean       @default(false) @map("is_rigged")
+  isAnimated      Boolean       @default(false) @map("is_animated")
+  isGameReady     Boolean       @default(false) @map("is_game_ready")
+  uvUnwrapping    UvUnwrapping? @map("uv_unwrapping")
+  geometry        Geometry?
+  polygonCount    Int?          @map("polygon_count") @db.UnsignedInt
+  vertexCount     Int?          @map("vertex_count") @db.UnsignedInt
+  software        String?       @db.VarChar(100)
+  pluginsUsed     String?       @map("plugins_used") @db.VarChar(255)
+  version         String        @default("1.0") @db.VarChar(20)
+  downloadCount   Int           @default(0) @map("download_count") @db.UnsignedInt
+  viewCount       Int           @default(0) @map("view_count") @db.UnsignedInt
+  publishedAt     DateTime?     @map("published_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  userId          Int           @map("user_id") @db.UnsignedInt
+  categoryId      Int           @map("category_id") @db.UnsignedInt
+  licenseId       Int           @map("license_id") @db.UnsignedInt
 
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_modele_utilisateur")
-  category  Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "fk_modele_categorie")
-  license   License      @relation(fields: [licenseId], references: [id], onDelete: Restrict, map: "fk_modele_licence")
-  images    ModelImage[]
-  viewLogs  ModelView[]
-  comments  Comment[]
-  reports   Report[]
-  likes     Like[]
-  favorites Favorite[]
+  creator     User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  license     License           @relation(fields: [licenseId], references: [id], onDelete: Restrict)
+  files       ModelFile[]
+  images      ModelImage[]
+  tags        ModelTag[]
+  downloads   Download[]
+  views       ModelView[]
+  comments    Comment[]
+  ratings     Rating[]
+  likes       Like[]
+  favorites   Favorite[]
+  collections CollectionModel[]
+  reports     Report[]
 
-  @@index([status], map: "idx_modele_statut")
-  @@index([categoryId], map: "idx_modele_categorie")
-  @@map("modele_3d")
+  @@index([status, visibility, publishedAt])
+  @@index([categoryId])
+  @@index([userId])
+  @@map("models")
+}
+
+model ModelFile {
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  fileName       String       @map("file_name") @db.VarChar(255)
+  format         FileFormat
+  mimeType       String       @map("mime_type") @db.VarChar(100)
+  sizeBytes      BigInt       @map("size_bytes") @db.UnsignedBigInt
+  checksumSha256 String?      @map("checksum_sha256") @db.Char(64)
+  storageKey     String       @unique @map("storage_key") @db.VarChar(500)
+  uploadStatus   UploadStatus @default(PENDING) @map("upload_status")
+  uploadedAt     DateTime?    @map("uploaded_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  modelId        Int          @map("model_id") @db.UnsignedInt
+
+  model     Model3D    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  downloads Download[]
+
+  @@index([modelId])
+  @@index([format])
+  @@map("model_files")
+}
+
+model ModelTag {
+  modelId Int @map("model_id") @db.UnsignedInt
+  tagId   Int @map("tag_id") @db.UnsignedInt
+
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  tag   Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([modelId, tagId])
+  @@index([tagId])
+  @@map("model_tags")
 }
 
 model ModelImage {
-  id       Int    @id @default(autoincrement()) @db.UnsignedInt
-  imageUrl String @map("image_url") @db.VarChar(500)
-  position Int    @default(0) @db.UnsignedTinyInt
-  modelId  Int    @map("modele_id") @db.UnsignedInt
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  storageKey   String       @unique @map("storage_key") @db.VarChar(500)
+  mimeType     String       @map("mime_type") @db.VarChar(50)
+  position     Int          @default(0) @db.UnsignedTinyInt
+  uploadStatus UploadStatus @default(PENDING) @map("upload_status")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  modelId      Int          @map("model_id") @db.UnsignedInt
 
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_image_modele")
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
-  @@map("image_modele")
+  @@unique([modelId, position])
+  @@map("model_images")
+}
+
+model Download {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    Int      @map("user_id") @db.UnsignedInt
+  modelId   Int      @map("model_id") @db.UnsignedInt
+  fileId    Int?     @map("file_id") @db.UnsignedInt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  model Model3D    @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  file  ModelFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([modelId, createdAt])
+  @@map("downloads")
 }
 
 model ModelView {
-  id        Int      @id @default(autoincrement()) @db.UnsignedInt
-  ipAddress String   @map("adresse_ip") @db.VarChar(45)
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  modelId   Int      @map("modele_id") @db.UnsignedInt
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  ipHash    String   @map("ip_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at")
+  modelId   Int      @map("model_id") @db.UnsignedInt
 
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_vue_modele")
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
-  @@map("vue_modele")
+  @@index([modelId, ipHash, createdAt])
+  @@map("model_views")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement()) @db.UnsignedInt
-  content   String   @map("contenu") @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  userId    Int      @map("utilisateur_id") @db.UnsignedInt
-  modelId   Int      @map("modele_id") @db.UnsignedInt
+  content   String   @db.Text
+  isHidden  Boolean  @default(false) @map("is_hidden")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  userId    Int      @map("user_id") @db.UnsignedInt
+  modelId   Int      @map("model_id") @db.UnsignedInt
+  parentId  Int?     @map("parent_id") @db.UnsignedInt
 
-  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_commentaire_utilisateur")
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_commentaire_modele")
+  author  User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  model   Model3D   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("replies")
 
-  @@map("commentaire")
+  @@index([modelId, createdAt])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Rating {
+  userId    Int      @map("user_id") @db.UnsignedInt
+  modelId   Int      @map("model_id") @db.UnsignedInt
+  score     Int      @db.UnsignedTinyInt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@id([userId, modelId])
+  @@index([modelId])
+  @@map("ratings")
+}
+
+model Like {
+  userId    Int      @map("user_id") @db.UnsignedInt
+  modelId   Int      @map("model_id") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@id([userId, modelId])
+  @@index([modelId])
+  @@map("likes")
+}
+
+model Favorite {
+  userId    Int      @map("user_id") @db.UnsignedInt
+  modelId   Int      @map("model_id") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@id([userId, modelId])
+  @@index([modelId])
+  @@map("favorites")
+}
+
+model Collection {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  userId      Int      @map("user_id") @db.UnsignedInt
+
+  owner  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  models CollectionModel[]
+
+  @@index([userId])
+  @@map("collections")
+}
+
+model CollectionModel {
+  collectionId Int      @map("collection_id") @db.UnsignedInt
+  modelId      Int      @map("model_id") @db.UnsignedInt
+  addedAt      DateTime @default(now()) @map("added_at")
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  model      Model3D    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, modelId])
+  @@index([modelId])
+  @@map("collection_models")
 }
 
 model Report {
-  id        Int      @id @default(autoincrement()) @db.UnsignedInt
-  reason    String   @map("raison") @db.VarChar(120)
-  details   String?  @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  userId    Int      @map("utilisateur_id") @db.UnsignedInt
-  modelId   Int      @map("modele_id") @db.UnsignedInt
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  reason       String       @db.VarChar(120)
+  details      String?      @db.Text
+  status       ReportStatus @default(PENDING)
+  resolvedAt   DateTime?    @map("resolved_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  userId       Int          @map("user_id") @db.UnsignedInt
+  modelId      Int          @map("model_id") @db.UnsignedInt
+  resolvedById Int?         @map("resolved_by_id") @db.UnsignedInt
 
-  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_signalement_utilisateur")
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_signalement_modele")
+  author     User    @relation("reportAuthor", fields: [userId], references: [id], onDelete: Restrict)
+  model      Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  resolvedBy User?   @relation("reportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
 
-  @@map("signalement")
-}
-
-/// A user "likes" a model — composite key: one like per user and model
-model Like {
-  userId    Int      @map("utilisateur_id") @db.UnsignedInt
-  modelId   Int      @map("modele_id") @db.UnsignedInt
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
-
-  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_aime_utilisateur")
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_aime_modele")
-
-  @@id([userId, modelId])
-  @@map("aime")
-}
-
-/// A user adds a model to their favorites — composite key: no duplicates
-model Favorite {
-  userId    Int      @map("utilisateur_id") @db.UnsignedInt
-  modelId   Int      @map("modele_id") @db.UnsignedInt
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
-
-  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_favori_utilisateur")
-  model Model3D @relation(fields: [modelId], references: [id], onDelete: Cascade, map: "fk_favori_modele")
-
-  @@id([userId, modelId])
-  @@map("favori")
+  @@index([status, createdAt])
+  @@map("reports")
 }

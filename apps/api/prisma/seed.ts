@@ -1,62 +1,98 @@
-/**
- * Reference data needed for the app to work: roles, categories and licenses.
- * Idempotent (upserts) — safe to run several times: `npm run db:seed`.
- */
 import 'dotenv/config';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not set — copy .env.example to .env first.');
+  throw new Error('DATABASE_URL is not set, copy .env.example to .env first.');
 }
 
 const prisma = new PrismaClient({ adapter: new PrismaMariaDb(databaseUrl) });
 
 const roles = [
-  { name: 'USER', description: 'Registered user: download, comment, like, favorite, report' },
-  { name: 'CREATOR', description: 'User who can also publish and manage their own 3D models' },
-  { name: 'ADMIN', description: 'Moderation: manage models, accounts, reports and comments' },
+  { name: 'USER', description: 'Registered user' },
+  { name: 'CREATOR', description: 'User who can publish 3D models' },
+  { name: 'ADMIN', description: 'Moderator' },
 ];
 
-// Category names are user-facing content, so they stay in French.
-const categories = [
-  'Personnages',
-  'Animaux',
-  'Véhicules',
-  'Architecture',
-  'Mobilier',
-  'Nature',
-  'Objets',
-  'Armes & accessoires',
-];
+const categories: Record<string, string[]> = {
+  Personnages: ['Humains', 'Créatures', 'Robots'],
+  Animaux: ['Mammifères', 'Oiseaux', 'Reptiles'],
+  Véhicules: ['Voitures', 'Motos', 'Avions', 'Vaisseaux'],
+  Architecture: ['Bâtiments', 'Intérieurs', 'Ruines'],
+  Mobilier: ['Salon', 'Cuisine', 'Bureau'],
+  Nature: ['Plantes', 'Arbres', 'Rochers'],
+  Objets: ['Électronique', 'Outils', 'Décoration'],
+  Armes: ['Armes blanches', 'Armes à feu', 'Science-fiction'],
+};
 
 const licenses = [
-  { type: 'free', name: 'CC0 — Domaine public' },
-  { type: 'free', name: 'CC BY 4.0 — Attribution' },
-  { type: 'paid', name: 'Licence standard — usage personnel et commercial' },
-  { type: 'paid', name: 'Licence éditoriale — usage non commercial' },
+  { name: 'CC0 Domaine public', commercialUse: true, modificationsAllowed: true },
+  { name: 'CC BY 4.0 Attribution', commercialUse: true, modificationsAllowed: true },
+  { name: 'Usage personnel uniquement', commercialUse: false, modificationsAllowed: true },
+  {
+    name: 'Usage commercial sans redistribution',
+    commercialUse: true,
+    modificationsAllowed: false,
+  },
 ];
+
+const tags = [
+  'Cyberpunk',
+  'Sci-Fi',
+  'Fantasy',
+  'Low-poly',
+  'Réaliste',
+  'Cartoon',
+  'Médiéval',
+  'Stylisé',
+];
+
+function slugify(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
 
 async function main(): Promise<void> {
   for (const role of roles) {
     await prisma.role.upsert({ where: { name: role.name }, update: role, create: role });
   }
 
-  for (const name of categories) {
-    await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
-  }
+  for (const [name, subcategories] of Object.entries(categories)) {
+    const slug = slugify(name);
+    const parent = await prisma.category.upsert({
+      where: { slug },
+      update: { name },
+      create: { name, slug },
+    });
 
-  for (const license of licenses) {
-    const existing = await prisma.license.findFirst({ where: { name: license.name } });
-    if (!existing) {
-      await prisma.license.create({ data: license });
+    for (const subName of subcategories) {
+      const subSlug = `${slug}-${slugify(subName)}`;
+      await prisma.category.upsert({
+        where: { slug: subSlug },
+        update: { name: subName, parentId: parent.id },
+        create: { name: subName, slug: subSlug, parentId: parent.id },
+      });
     }
   }
 
-  console.log(
-    `Seeded ${roles.length} roles, ${categories.length} categories, ${licenses.length} licenses.`,
-  );
+  for (const license of licenses) {
+    await prisma.license.upsert({
+      where: { name: license.name },
+      update: license,
+      create: license,
+    });
+  }
+
+  for (const name of tags) {
+    await prisma.tag.upsert({ where: { name }, update: {}, create: { name } });
+  }
+
+  console.log('Seed completed.');
 }
 
 main()
