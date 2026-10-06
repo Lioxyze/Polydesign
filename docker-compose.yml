@@ -1,0 +1,49 @@
+# Environnement de développement : trois services lancés avec « docker compose up -d ».
+# Les valeurs ${...} viennent du fichier .env placé à côté de ce fichier.
+name: polydesign
+
+services:
+  # La base de données MySQL.
+  mysql:
+    image: mysql:8.4
+    # Réglages lus par MySQL à sa première création : base, utilisateur, mots de passe.
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # port du PC : port du conteneur. Le PC joint MySQL sur localhost:3306.
+    ports:
+      - '3306:3306'
+    volumes:
+      # Garde les données de la base quand le conteneur s'arrête.
+      - mysql-data:/var/lib/mysql
+      # Script lancé à la création de la base : donne à Prisma le droit dont il a besoin pour ses migrations.
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  # Adminer : un site pour voir les tables, sur http://localhost:8080 (serveur : mysql).
+  adminer:
+    image: adminer:6.1.1
+    ports:
+      - '8080:8080'
+
+  # L'application Next.js (pages et routes API), sur http://localhost:3000.
+  web:
+    # Construit l'image avec le Dockerfile de ce dossier.
+    build: .
+    command: npm run dev
+    # Dans Docker, la base s'appelle « mysql » (le nom du service), pas « localhost ».
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?allowPublicKeyRetrieval=true
+    ports:
+      - '3000:3000'
+    # MySQL démarre avant l'application.
+    depends_on:
+      - mysql
+    # Partage le code avec le conteneur : pas besoin de reconstruire l'image après une modification.
+    volumes:
+      - ./src:/app/src
+
+# Les volumes gérés par Docker.
+volumes:
+  mysql-data:
