@@ -1,51 +1,66 @@
+# Environnement de développement : quatre services lancés avec « docker compose up -d ».
+# Les valeurs ${...} viennent du fichier .env placé à côté de ce fichier.
 name: polydesign
 
 services:
+  # La base de données MySQL.
   mysql:
     image: mysql:8.4
-    container_name: polydesign-mysql
-    restart: unless-stopped
+    # Réglages lus par MySQL à sa première création : base, utilisateur, mots de passe.
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-polydesign}
-      MYSQL_USER: ${MYSQL_USER:-polydesign}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-polydesign}
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # port du PC : port du conteneur. Le PC joint MySQL sur localhost:3306.
     ports:
-      - '${MYSQL_PORT:-3306}:3306'
+      - '3306:3306'
     volumes:
+      # Garde les données de la base quand le conteneur s'arrête.
       - mysql-data:/var/lib/mysql
+      # Script lancé à la création de la base : donne à Prisma le droit dont il a besoin pour ses migrations.
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test:
-        ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-p${MYSQL_ROOT_PASSWORD:-root}']
-      interval: 5s
-      timeout: 5s
-      retries: 20
 
-  s3:
-    image: adobe/s3mock:latest
-    container_name: polydesign-s3
-    restart: unless-stopped
+  # Adminer : un site pour voir les tables, sur http://localhost:8080 (serveur : mysql).
+  adminer:
+    image: adminer:6.1.1
+    ports:
+      - '8080:8080'
+
+  # L'API NestJS, sur http://localhost:4000/api.
+  api:
+    # Construit l'image avec le Dockerfile de ce dossier.
+    build: .
+    command: npm run dev:api
+    # Les variables de l'API (secret du jeton, etc.).
+    env_file: apps/api/.env
+    # Dans Docker, la base s'appelle « mysql » (le nom du service), pas « localhost ».
     environment:
-      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: ${S3_BUCKET:-polydesign}
-      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: 'true'
-      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /data
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?allowPublicKeyRetrieval=true
     ports:
-      - '9000:9090'
+      - '4000:4000'
+    # MySQL démarre avant l'API.
+    depends_on:
+      - mysql
+    # Partage le code avec le conteneur : pas besoin de reconstruire l'image après une modification.
     volumes:
-      - s3-data:/data
+      - ./apps/api/src:/app/apps/api/src
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: polydesign-mailpit
-    restart: unless-stopped
+  # Le site Next.js, sur http://localhost:3000.
+  web:
+    build: .
+    command: npm run dev:web
+    # C'est le navigateur, sur le PC, qui appelle l'API : on garde donc « localhost ».
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api
     ports:
-      - '1025:1025'
-      - '8025:8025'
+      - '3000:3000'
+    # L'API démarre avant le site.
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
 
+# Les volumes gérés par Docker.
 volumes:
   mysql-data:
-  s3-data:

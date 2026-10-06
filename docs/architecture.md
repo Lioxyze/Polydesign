@@ -8,8 +8,7 @@ flowchart LR
     Browser["Browser<br/>Next.js web app"] -- "REST + JWT" --> API["NestJS API"]
     API -- "Prisma" --> DB[("MySQL")]
     API -- "presigned URL" --> Browser
-    Browser -- "direct upload / download" --> S3[("S3 storage<br/>(S3Mock locally)")]
-    API -- "SMTP" --> Mail["Mail server<br/>(Mailpit locally)"]
+    Browser -- "direct upload / download" --> S3[("S3 storage<br/>(planned)")]
 ```
 
 ## Layers
@@ -56,3 +55,16 @@ Each feature is a NestJS module (controller + service + DTOs):
 - Every input validated with **Zod**; Prisma parameterized queries (SQL injection)
 - CORS restricted to the web app origin, secrets in environment variables
 - See the OWASP Top 10 mapping in the project file
+
+## Local services
+
+`docker compose up -d` starts the development environment (see `docker-compose.yml`, commented line by line):
+
+- `mysql`: the database (MySQL 8.4), with its data kept in a Docker volume;
+- `adminer`: a web page to look at the tables, on http://localhost:8080;
+- `api`: the NestJS API, which reaches the database with the host name `mysql`;
+- `web`: the Next.js app, which calls the API through `localhost:4000` because the call is made by the browser.
+
+A fake S3 storage and a fake mail server will be added when the upload and e-mail features need them.
+The local database URL has `allowPublicKeyRetrieval=true`, needed to sign in to MySQL without TLS.
+In production the connection uses TLS and this option is removed.
